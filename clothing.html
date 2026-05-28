@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YEDO | CLOTHING</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --font-main: "Helvetica Neue", Helvetica, "Pretendard", Arial, sans-serif;
+            --bg-color: #f4f4f5; 
+            --accent-color: #000000;
+            --text-muted: #888888;
+            --grain-opacity: 0.04;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden; 
+        }
+
+        /* --- 1. HUD & Overlay --- */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999;
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZSc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuNjUnIG51bU9jdGF2ZXM9JzMnIHN0aWNoVGlsc2U9J3N0aWNoJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsdGVyPSd1cmwoI25vaXNlKScvPjwvc3ZnPg==');
+            opacity: var(--grain-opacity);
+            filter: invert(1);
+        }
+
+        .hud {
+            position: fixed; 
+            font-weight: 400;
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            z-index: 900; 
+            pointer-events: none;
+            color: #000; 
+            font-size: 12px; 
+        }
+        
+        .hud-bottom-left { bottom: 40px; left: 40px; line-height: 1.5; }
+
+        /* --- 2. Header & Fullscreen Menu --- */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            padding: 40px; box-sizing: border-box; z-index: 1001;
+            pointer-events: none;
+        }
+        .logo a { 
+            font-size: 1.5rem; font-weight: 500; text-decoration: none; 
+            letter-spacing: 3px; pointer-events: auto; color: #000; 
+        }
+
+        /* 🌟 메뉴 트리거 아이콘 규격화 */
+        .menu-trigger { 
+            position: fixed; right: 40px; top: 40px; z-index: 1002; 
+            cursor: pointer; color: #000;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .menu-trigger svg {
+            width: 100%; height: 100%;
+            stroke-width: 1.2px;
+            transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .menu-trigger:hover svg {
+            transform: scale(1.1);
+        }
+
+        /* 🌟 캐스케이딩 텍스트 트리 메뉴 동기화 */
+        #text-tree-menu {
+            position: fixed; inset: 0;
+            z-index: 1000; pointer-events: none;
+        }
+
+        .tree-backdrop {
+            position: absolute; inset: 0;
+            background: transparent;
+            backdrop-filter: none;
+            opacity: 0; pointer-events: none;
+        }
+        body.menu-open .tree-backdrop { opacity: 1; pointer-events: auto; cursor: default; }
+
+        .tree-container {
+            position: absolute;
+            top: 80px; right: 40px; 
+            display: flex; flex-direction: column; gap: 25px;
+            align-items: flex-end; text-align: right;
+        }
+
+        .tree-branch {
+            display: flex; flex-direction: column; align-items: flex-end;
+            opacity: 0; transform: translateX(15px);
+            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        
+        body.menu-open .tree-branch { opacity: 1; transform: translateX(0); pointer-events: auto; }
+        body.menu-open #branch-archive { transition-delay: 0.1s; } 
+
+        .branch-title {
+            font-size: 1.2rem; font-weight: 500; letter-spacing: 2px;
+            text-transform: uppercase; color: #888;
+            cursor: pointer; display: inline-block;
+            transition: color 0.3s ease, transform 0.3s ease;
+            transform-origin: right center; 
+        }
+        .branch-title:hover { color: #000; }
+        .tree-branch.is-open .branch-title { color: #000; }
+
+        .branch-leaves {
+            display: flex; flex-direction: column; gap: 10px;
+            margin-right: 10px; align-items: flex-end; 
+            overflow: hidden; 
+            max-height: 0; opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s ease, margin-top 0.3s ease;
+        }
+
+        .tree-branch.is-open .branch-leaves {
+            max-height: 400px; opacity: 1; margin-top: 15px;
+        }
+
+        .branch-leaves a {
+            font-size: 0.8rem; font-weight: 500; letter-spacing: 1px;
+            color: #666; text-decoration: none; text-transform: uppercase;
+            display: inline-block; transform: translateX(10px);
+            opacity: 0; transition: all 0.3s ease;
+        }
+
+        .tree-branch.is-open .branch-leaves a { transform: translateX(0); opacity: 1; }
+        .branch-leaves a:hover { color: #000; transform: translateX(-5px); }
+
+        .tree-branch.is-open .branch-leaves a:nth-child(1) { transition-delay: 0.05s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(2) { transition-delay: 0.08s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(3) { transition-delay: 0.11s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(4) { transition-delay: 0.14s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(5) { transition-delay: 0.17s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(6) { transition-delay: 0.2s; }
+
+        /* --- 3. Clothing Page Layout --- */
+        .page-wrapper {
+            padding: 150px 5vw 100px 5vw;
+            max-width: 1400px; margin: 0 auto;
+        }
+
+        .clothing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 80px 40px; 
+            padding-top: 0; 
+        }
+
+        .clothing-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .clothing-visual {
+            position: relative;
+            aspect-ratio: 3 / 4; 
+            background-color: #ebebeb;
+            overflow: hidden;
+            mix-blend-mode: multiply;
+            cursor: pointer; 
+            margin-bottom: 20px;
+        }
+
+        .clothing-visual img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+            filter: grayscale(15%) contrast(1.05);
+        }
+
+        /* 🌟 메뉴 열려있을 때 호버 제어 */
+        body:not(.menu-open) .clothing-item:hover .clothing-visual img {
+            transform: scale(1.05);
+            filter: grayscale(0%) contrast(1.05);
+        }
+
+        .clothing-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0 5px;
+        }
+
+        .clothing-title {
+            font-size: 1rem;
+            font-weight: 400; 
+            letter-spacing: -0.5px;
+            margin: 0;
+            text-transform: uppercase;
+            color: #000;
+        }
+
+        .clothing-year {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            flex-shrink: 0;
+            margin-left: 15px;
+        }
+
+        /* --- 4. Lightbox --- */
+        #lightbox {
+            position: fixed; inset: 0; background: rgba(244, 244, 245, 0.98);
+            z-index: 10000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; backdrop-filter: blur(10px);
+        }
+        #lightbox.active { opacity: 1; pointer-events: auto; }
+        
+        .lightbox-close { 
+            position: absolute; top: 40px; right: 40px; 
+            cursor: pointer; color: #000;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10001;
+        }
+        .lightbox-close svg {
+            width: 100%; height: 100%;
+            stroke-width: 1.2px;
+        }
+
+        .lightbox-slider {
+            position: relative; width: 100%; height: 75vh;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lightbox-slider img {
+            max-width: 80vw; max-height: 75vh; object-fit: contain;
+            display: none; box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+        }
+        .lightbox-slider img.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        .slide-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: none; border: none; font-size: 2rem; color: #888;
+            cursor: pointer; padding: 20px; z-index: 10001; transition: color 0.3s;
+        }
+        .slide-btn:hover { color: #000; }
+        .prev-btn { left: 5vw; }
+        .next-btn { right: 5vw; }
+        
+        .lightbox-counter {
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            font-size: 12px; letter-spacing: 2px; color: #888;
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 30px 20px; }
+            .logo a { font-size: 1.2rem; }
+            .menu-trigger { right: 20px; top: 30px; } 
+            
+            .tree-container { top: 70px; right: 20px; } 
+            .branch-title { font-size: 1.1rem; }
+            .branch-leaves a { font-size: 0.75rem; }
+
+            .hud-bottom-left { bottom: 30px; left: 20px; font-size: 10px; }
+            .page-wrapper { padding: 120px 20px 80px 20px; }
+            
+            .clothing-grid { gap: 60px 20px; }
+            .lightbox-close { top: 30px; right: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise-overlay"></div>
+    
+    <div class="hud hud-bottom-left">CLOTHING ARCHIVE</div>
+
+    <header>
+        <div class="logo"><a href="index.html">YEDO</a></div>
+    </header>
+
+    <div class="menu-trigger" onclick="toggleMenu()" id="menuBtn">
+        <svg id="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="5" x2="21" y2="5"></line>
+            <line x1="3" y1="19" x2="21" y2="19"></line>
+        </svg>
+        <svg id="icon-close-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter" style="display: none;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </div>
+
+    <!-- 🌟 최신 캐스케이딩 트리 메뉴 적용 (DAILY PIECES 제거 및 수평 동기화) -->
+    <nav id="text-tree-menu">
+        <div class="tree-backdrop" onclick="toggleMenu()"></div>
+        
+        <div class="tree-container">
+            <!-- PHOTO Branch -->
+            <div class="tree-branch" id="branch-photo">
+                <div class="branch-title" onclick="toggleCategory('photo')">PHOTO</div>
+                <div class="branch-leaves">
+                    <a href="hongkong.html">HONG KONG</a>
+                    <a href="shanghai.html">SHANGHAI</a>
+                    <a href="hanoi.html">HANOI</a>
+                    <a href="sapa.html">SAPA</a>
+                    <a href="danang.html">DA NANG</a>
+                    <!-- 좌측 6번째 항목 -->
+                    <a href="hochiminh.html">HO CHI MINH</a>
+                </div>
+            </div>
+            
+            <!-- ARCHIVE Branch -->
+            <div class="tree-branch" id="branch-archive">
+                <div class="branch-title" onclick="toggleCategory('archive')">ARCHIVE</div>
+                <div class="branch-leaves">
+                    <a href="music.html">MUSIC</a>
+                    <a href="clothing.html">CLOTHING</a>
+                    <a href="dailyarchive.html">DAILY ARCHIVE</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrapper">
+        <div class="clothing-grid">
+            
+            <!-- Work 1 -->
+            <article class="clothing-item">
+                <div class="clothing-visual" onclick="openLightbox(['clothimg/work1_1.jpg', 'clothimg/work1_2.jpg'])">
+                    <img src="clothimg/work1_main.jpg" alt="Work 01" onerror="this.src='https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=1000&auto=format&fit=crop'">
+                </div>
+                <div class="clothing-meta">
+                    <h3 class="clothing-title">RECONSTRUCTED BLAZER</h3>
+                    <span class="clothing-year">2023</span>
+                </div>
+            </article>
+
+            <!-- Work 2 -->
+            <article class="clothing-item">
+                <div class="clothing-visual" onclick="openLightbox(['clothimg/work2_1.jpg'])">
+                    <img src="clothimg/work2_main.jpg" alt="Work 02" onerror="this.src='https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=1000&auto=format&fit=crop'">
+                </div>
+                <div class="clothing-meta">
+                    <h3 class="clothing-title">RAW DENIM PANTS</h3>
+                    <span class="clothing-year">2024</span>
+                </div>
+            </article>
+
+            <!-- Work 3 -->
+            <article class="clothing-item">
+                <div class="clothing-visual" onclick="openLightbox(['clothimg/work3_1.jpg', 'clothimg/work3_2.jpg'])">
+                    <img src="clothimg/work3_main.jpg" alt="Work 03" onerror="this.src='https://images.unsplash.com/photo-1543076447-215ad9ba6923?q=80&w=1000&auto=format&fit=crop'">
+                </div>
+                <div class="clothing-meta">
+                    <h3 class="clothing-title">OVERSIZED PARKA</h3>
+                    <span class="clothing-year">2023</span>
+                </div>
+            </article>
+
+            <!-- Work 4 -->
+            <article class="clothing-item">
+                <div class="clothing-visual" onclick="openLightbox(['clothimg/work4_1.jpg'])">
+                    <img src="clothimg/work4_main.jpg" alt="Work 04" onerror="this.src='https://images.unsplash.com/photo-1618354691373-d851c5c3a990?q=80&w=1000&auto=format&fit=crop'">
+                </div>
+                <div class="clothing-meta">
+                    <h3 class="clothing-title">ASYMMETRIC SHIRT</h3>
+                    <span class="clothing-year">2024</span>
+                </div>
+            </article>
+
+        </div>
+    </div>
+
+    <!-- 미니멀 다중 이미지 슬라이더 (Lightbox) -->
+    <div id="lightbox" onclick="closeLightboxOutside(event)">
+        <div class="lightbox-close" onclick="closeLightbox()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+        <button class="slide-btn prev-btn" onclick="changeSlide(-1, event)">&#10094;</button>
+        <div class="lightbox-slider" id="lightbox-slider"></div>
+        <button class="slide-btn next-btn" onclick="changeSlide(1, event)">&#10095;</button>
+        <div class="lightbox-counter" id="lightbox-counter">1 / 1</div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const btn = document.getElementById('menuBtn');
+            const iconHamburger = document.getElementById('icon-hamburger');
+            const iconClose = document.getElementById('icon-close-menu');
+            
+            document.body.classList.toggle('menu-open');
+            
+            if (document.body.classList.contains('menu-open')) {
+                iconHamburger.style.display = 'none';
+                iconClose.style.display = 'block';
+            } else {
+                // 메뉴 닫을 때 열려있던 카테고리도 닫기
+                document.getElementById('branch-photo').classList.remove('is-open');
+                document.getElementById('branch-archive').classList.remove('is-open');
+                iconHamburger.style.display = 'block';
+                iconClose.style.display = 'none';
+            }
+        }
+
+        function toggleCategory(cat) {
+            const photoBranch = document.getElementById('branch-photo');
+            const archiveBranch = document.getElementById('branch-archive');
+
+            if (cat === 'photo') {
+                photoBranch.classList.toggle('is-open');
+                archiveBranch.classList.remove('is-open'); 
+            } else {
+                archiveBranch.classList.toggle('is-open');
+                photoBranch.classList.remove('is-open'); 
+            }
+        }
+
+        let currentImages = [];
+        let currentSlide = 0;
+
+        function openLightbox(images) {
+            if (document.body.classList.contains('menu-open')) return;
+            if (!images || images.length === 0) return;
+            
+            currentImages = images;
+            currentSlide = 0;
+            renderLightbox();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeLightboxOutside(e) {
+            if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-slider')) {
+                closeLightbox();
+            }
+        }
+
+        function changeSlide(n, event) {
+            if(event) event.stopPropagation();
+            if(currentImages.length <= 1) return;
+            currentSlide = (currentSlide + n + currentImages.length) % currentImages.length;
+            renderLightbox();
+        }
+
+        function renderLightbox() {
+            const slider = document.getElementById('lightbox-slider');
+            const counter = document.getElementById('lightbox-counter');
+            const prevBtn = document.querySelector('.prev-btn');
+            const nextBtn = document.querySelector('.next-btn');
+
+            slider.innerHTML = `<img src="${currentImages[currentSlide]}" class="active" alt="">`;
+            
+            if (currentImages.length > 1) {
+                counter.innerText = `${currentSlide + 1} / ${currentImages.length}`;
+                prevBtn.style.display = 'block';
+                nextBtn.style.display = 'block';
+                counter.style.display = 'block';
+            } else {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                counter.style.display = 'none';
+            }
+        }
+
+        // 🌟 ESC 키보드 단축키 전역 바인딩 및 좌우 방향키 연동 
+        window.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            const isLightboxActive = lightbox.classList.contains('active');
+            const isMenuOpen = document.body.classList.contains('menu-open');
+
+            if (e.key === 'Escape') {
+                if (isLightboxActive) closeLightbox();
+                if (isMenuOpen) toggleMenu();
+            }
+
+            if (isLightboxActive) {
+                if (e.key === 'ArrowLeft') changeSlide(-1);
+                else if (e.key === 'ArrowRight') changeSlide(1);
+            }
+        });
+    </script>
+</body>
+</html>

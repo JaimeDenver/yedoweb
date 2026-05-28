@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YEDO | HONG KONG</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --font-main: "Helvetica Neue", Helvetica, "Pretendard", Arial, sans-serif;
+            --bg-color: #f4f4f5; 
+            --accent-color: #000000;
+            --text-muted: #888888;
+            --grain-opacity: 0.04;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- 1. HUD & Overlay --- */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999;
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZSc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuNjUnIG51bU9jdGF2ZXM9JzMnIHN0aWNoVGlsc2U9J3N0aWNoJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsdGVyPSd1cmwoI25vaXNlKScvPjwvc3ZnPg==');
+            opacity: var(--grain-opacity);
+            filter: invert(1);
+        }
+
+        .hud {
+            position: fixed; 
+            font-weight: 400;
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            z-index: 900; 
+            pointer-events: none;
+            color: #000; 
+            font-size: 12px; 
+        }
+        
+        .hud-bottom-left { 
+            bottom: 40px; 
+            left: 40px; 
+            line-height: 1.5;
+        }
+
+        .hud-end-metadata {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            text-align: right;
+            font-size: 10px;
+            letter-spacing: 1px;
+            color: #888;
+            text-transform: uppercase;
+            z-index: 900;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+
+        /* --- 2. Header & 트리거 --- */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            padding: 40px; box-sizing: border-box; z-index: 1001;
+            pointer-events: none;
+        }
+        .logo a { 
+            font-size: 1.5rem; font-weight: 500; text-decoration: none; 
+            letter-spacing: 3px; 
+            pointer-events: auto;
+            color: #000; 
+        }
+
+        .menu-trigger { 
+            position: fixed; right: 40px; top: 40px; z-index: 1005; 
+            cursor: pointer; color: #000;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.4s ease;
+        }
+        .menu-trigger svg {
+            width: 100%; height: 100%;
+            stroke-width: 1.2px;
+        }
+        .menu-trigger.active { transform: rotate(90deg); }
+
+        /* --- 🌟 3. 캐스케이딩 텍스트 트리 메뉴 --- */
+        #text-tree-menu {
+            position: fixed; inset: 0;
+            z-index: 1000; pointer-events: none;
+        }
+
+        .tree-backdrop {
+            position: absolute; inset: 0;
+            background: transparent;
+            backdrop-filter: none;
+            opacity: 0; pointer-events: none;
+        }
+        body.menu-open .tree-backdrop { opacity: 1; pointer-events: auto; cursor: default; }
+
+        .tree-container {
+            position: absolute;
+            top: 80px; right: 40px; 
+            display: flex; flex-direction: column; gap: 25px;
+            align-items: flex-end; text-align: right;
+        }
+
+        .tree-branch {
+            display: flex; flex-direction: column; align-items: flex-end;
+            opacity: 0; transform: translateX(15px);
+            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        
+        body.menu-open .tree-branch { opacity: 1; transform: translateX(0); pointer-events: auto; }
+        body.menu-open #branch-archive { transition-delay: 0.1s; } 
+
+        .branch-title {
+            font-size: 1.2rem; font-weight: 500; letter-spacing: 2px;
+            text-transform: uppercase; color: #888;
+            cursor: pointer; display: inline-block;
+            transition: color 0.3s ease, transform 0.3s ease;
+            transform-origin: right center; 
+        }
+        .branch-title:hover { color: #000; }
+        .tree-branch.is-open .branch-title { color: #000; }
+
+        .branch-leaves {
+            display: flex; flex-direction: column; gap: 10px;
+            margin-right: 10px; align-items: flex-end; 
+            overflow: hidden; 
+            max-height: 0; opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s ease, margin-top 0.3s ease;
+        }
+
+        .tree-branch.is-open .branch-leaves {
+            max-height: 400px; opacity: 1; margin-top: 15px;
+        }
+
+        .branch-leaves a {
+            font-size: 0.8rem; font-weight: 500; letter-spacing: 1px;
+            color: #666; text-decoration: none; text-transform: uppercase;
+            display: inline-block; transform: translateX(10px);
+            opacity: 0; transition: all 0.3s ease;
+        }
+
+        .tree-branch.is-open .branch-leaves a { transform: translateX(0); opacity: 1; }
+        .branch-leaves a:hover { color: #000; transform: translateX(-5px); }
+
+        /* 순차적 등장 딜레이 */
+        .tree-branch.is-open .branch-leaves a:nth-child(1) { transition-delay: 0.05s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(2) { transition-delay: 0.08s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(3) { transition-delay: 0.11s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(4) { transition-delay: 0.14s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(5) { transition-delay: 0.17s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(6) { transition-delay: 0.2s; }
+
+        /* --- 4. Gallery Layout --- */
+        .horizontal-scroll-wrapper {
+            position: absolute; top: 0; left: 0; height: 100vh;
+            display: flex; align-items: center;
+            padding: 0 15vw; 
+            gap: 150px; 
+            will-change: transform;
+        }
+
+        .chapter-intro {
+            flex-shrink: 0; width: 40vw; padding-right: 10vw;
+            display: flex; flex-direction: column; justify-content: center;
+            will-change: transform; 
+        }
+        .chapter-intro h2 { font-size: clamp(2rem, 5vw, 4rem); font-weight: 500; line-height: 1.1; letter-spacing: -2px; margin: 0 0 30px 0; text-transform: uppercase; }
+        .chapter-intro p { font-size: 1rem; color: #666; line-height: 1.8; word-break: keep-all; margin: 0; }
+
+        /* 🌟 이미지 컨테이너 규격 설정 (텍스트 간격을 동일하게 보장) */
+        .photo-item { position: relative; flex-shrink: 0; cursor: pointer; will-change: transform; }
+        .photo-item img { display: block; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; }
+        
+        body:not(.menu-open) .photo-item:hover img { filter: brightness(0.85); }
+
+        /* 🌟 정밀한 뷰포트 상대 단위(vh)를 CSS 클래스로 명확히 선언 */
+        .size-l img { height: 65vh; }
+        .size-m-plus img { height: 55vh; }  /* 7번 사진 전용 (M보다 조금 큼) */
+        .size-m img { height: 50vh; }
+        .size-m-minus img { height: 45vh; } /* 8번 사진 전용 (M보다 조금 작음) */
+        .size-s img { height: 35vh; }
+
+        /* 텍스트는 항상 컨테이너 최하단에서 정확히 40px 아래에 위치 */
+        .photo-meta { position: absolute; bottom: -40px; left: 0; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px; font-weight: 400; text-transform: uppercase; }
+
+        /* --- 5. Lightbox --- */
+        #lightbox {
+            position: fixed; inset: 0; background: rgba(244, 244, 245, 0.98);
+            z-index: 10000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; backdrop-filter: blur(10px);
+        }
+        #lightbox.active { opacity: 1; pointer-events: auto; }
+        #lightbox img { max-width: 90vw; max-height: 85vh; box-shadow: 0 30px 60px rgba(0,0,0,0.15); }
+        
+        .lightbox-close { 
+            position: absolute; top: 40px; right: 40px; 
+            cursor: pointer; color: #000;
+            width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 10001;
+        }
+        .lightbox-close svg {
+            width: 100%; height: 100%;
+            stroke-width: 1.2px;
+        }
+        
+        @media (max-width: 768px) {
+            header { padding: 30px 20px; }
+            .logo a { font-size: 1.2rem; }
+            .menu-trigger { right: 20px; top: 30px; }
+            .hud-bottom-left { bottom: 30px; left: 20px; font-size: 10px; }
+            .horizontal-scroll-wrapper { gap: 80px; padding: 0 10vw; }
+            .chapter-intro { width: 80vw; padding-right: 0; }
+            
+            .tree-container { top: 70px; right: 20px; } 
+            .branch-title { font-size: 1.1rem; }
+            .branch-leaves a { font-size: 0.75rem; }
+
+            /* 🌟 모바일에서는 높이 고정을 풀고 너비 비율로 통일하여 렌더링 오류 원천 차단 */
+            .photo-item img { max-width: 80vw; }
+            .size-l img, .size-m-plus img, .size-m img, .size-m-minus img, .size-s img { height: auto; width: 80vw; } 
+            
+            .lightbox-close { top: 30px; right: 20px; }
+            .hud-end-metadata { right: 20px; bottom: 30px; font-size: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise-overlay"></div>
+
+    <div class="hud hud-bottom-left">HONG KONG</div>
+    
+    <div class="hud-end-metadata" id="endMeta">
+        LOC: 22.3193° N, 114.1694° E / RECORDED IN 2023
+    </div>
+
+    <header>
+        <div class="logo"><a href="index.html">YEDO</a></div>
+    </header>
+
+    <div class="menu-trigger" onclick="toggleMenu()" id="menuBtn">
+        <svg id="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="5" x2="21" y2="5"></line>
+            <line x1="3" y1="19" x2="21" y2="19"></line>
+        </svg>
+        <svg id="icon-close-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter" style="display: none;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </div>
+
+    <nav id="text-tree-menu">
+        <div class="tree-backdrop" onclick="toggleMenu()"></div>
+        
+        <div class="tree-container">
+            <div class="tree-branch" id="branch-photo">
+                <div class="branch-title" onclick="toggleCategory('photo')">PHOTO</div>
+                <div class="branch-leaves">
+                    <a href="hongkong.html">HONG KONG</a>
+                    <a href="shanghai.html">SHANGHAI</a>
+                    <a href="hanoi.html">HANOI</a>
+                    <a href="sapa.html">SAPA</a>
+                    <a href="danang.html">DA NANG</a>
+                    <a href="hochiminh.html">HO CHI MINH</a>
+                </div>
+            </div>
+            
+            <div class="tree-branch" id="branch-archive">
+                <div class="branch-title" onclick="toggleCategory('archive')">ARCHIVE</div>
+                <div class="branch-leaves">
+                    <a href="music.html">MUSIC</a>
+                    <a href="clothing.html">CLOTHING</a>
+                    <a href="dailyarchive.html">DAILY ARCHIVE</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="horizontal-scroll-wrapper" id="scrollContainer">
+        <div class="chapter-intro skew-elem">
+            <h2>홍콩 (香港)</h2>
+            <p>
+                높고 좁은 건물들 사이로 스며드는 붉은 네온사인의 잔해들.<br>
+                2023년의 홍콩은 여전히 과거와 미래가 충돌하는 경계선 위에 서 있었다.<br>
+                구룡반도의 밤, 습도 높은 공기 속에서 남긴 파편들.
+            </p>
+        </div>
+
+        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg1.jpg" alt="">
+            <div class="photo-meta">HK_001</div>
+        </div>
+        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg2.jpg" alt="">
+            <div class="photo-meta">HK_002</div>
+        </div>
+        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg3.jpg" alt="">
+            <div class="photo-meta">HK_003</div>
+        </div>
+        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg4.jpg" alt="">
+            <div class="photo-meta">HK_004</div>
+        </div>
+        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg5.jpg" alt="">
+            <div class="photo-meta">HK_005</div>
+        </div>
+        
+        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg6.jpg" alt="">
+            <div class="photo-meta">HK_006</div>
+        </div>
+        
+        <!-- 🌟 새롭게 추가한 CSS 클래스 적용: M 사이즈를 기준으로 조금 팽창 및 수축 -->
+        <div class="photo-item size-m-plus skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg7.jpg" alt="">
+            <div class="photo-meta">HK_007</div>
+        </div>
+        
+        <div class="photo-item size-m-minus skew-elem" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg8.jpg" alt="">
+            <div class="photo-meta">HK_008</div>
+        </div>
+        
+        <div class="photo-item size-m skew-elem" style="padding-right: 15vw;" onclick="openLightbox(this)">
+            <img src="hkimg/hkimg9.jpg" alt="">
+            <div class="photo-meta">HK_009 // ARCHIVE END</div>
+        </div>
+    </main>
+
+    <div id="lightbox" onclick="closeLightbox()">
+        <div class="lightbox-close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        </div>
+        <img id="lightbox-img" src="" alt="">
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const btn = document.getElementById('menuBtn');
+            const iconHamburger = document.getElementById('icon-hamburger');
+            const iconClose = document.getElementById('icon-close-menu');
+            
+            document.body.classList.toggle('menu-open');
+            btn.classList.toggle('active');
+            
+            if(!document.body.classList.contains('menu-open')) {
+                document.getElementById('branch-photo').classList.remove('is-open');
+                document.getElementById('branch-archive').classList.remove('is-open');
+                iconHamburger.style.display = 'block'; iconClose.style.display = 'none';
+            } else {
+                iconHamburger.style.display = 'none'; iconClose.style.display = 'block';
+            }
+        }
+
+        function toggleCategory(cat) {
+            const photoBranch = document.getElementById('branch-photo');
+            const archiveBranch = document.getElementById('branch-archive');
+
+            if (cat === 'photo') {
+                photoBranch.classList.toggle('is-open');
+                archiveBranch.classList.remove('is-open'); 
+            } else {
+                archiveBranch.classList.toggle('is-open');
+                photoBranch.classList.remove('is-open'); 
+            }
+        }
+
+        const scrollContainer = document.getElementById('scrollContainer');
+        const skewElements = document.querySelectorAll('.skew-elem'); 
+        const endMeta = document.getElementById('endMeta');
+        
+        let currentScroll = 0;
+        let targetScroll = 0;
+        const ease = 0.08; 
+
+        window.addEventListener('wheel', (e) => {
+            if (document.body.classList.contains('menu-open')) return;
+
+            const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
+            const isAtLeftEdge = currentScroll <= 1;
+            const isAtRightEdge = currentScroll >= maxScroll - 1;
+            const isSwipingBack = e.deltaX < 0;
+            const isSwipingForward = e.deltaX > 0;
+
+            if (!((isAtLeftEdge && isSwipingBack) || (isAtRightEdge && isSwipingForward))) {
+                e.preventDefault();
+                targetScroll += e.deltaY + e.deltaX; 
+                targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+            }
+        }, { passive: false });
+
+        function renderScroll() {
+            const velocity = targetScroll - currentScroll;
+            currentScroll += velocity * ease;
+            scrollContainer.style.transform = `translate3d(-${currentScroll}px, 0, 0)`;
+
+            const skewValue = Math.max(-2, Math.min(2, velocity * 0.008)); 
+            skewElements.forEach(elem => {
+                elem.style.transform = `skewX(${skewValue}deg)`;
+            });
+
+            const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
+            if (currentScroll > maxScroll - 150) {
+                endMeta.style.opacity = "1";
+            } else {
+                endMeta.style.opacity = "0";
+            }
+
+            requestAnimationFrame(renderScroll);
+        }
+        renderScroll();
+
+        function openLightbox(element) {
+            if (document.body.classList.contains('menu-open')) return;
+            const imgSrc = element.querySelector('img').src;
+            document.getElementById('lightbox-img').src = imgSrc;
+            document.getElementById('lightbox').classList.add('active');
+        }
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const lightbox = document.getElementById('lightbox');
+                if (lightbox.classList.contains('active')) {
+                    closeLightbox();
+                }
+                const menu = document.getElementById('text-tree-menu');
+                if (document.body.classList.contains('menu-open')) {
+                    toggleMenu();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

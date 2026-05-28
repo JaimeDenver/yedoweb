@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>YEDO</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <style>
+        :root {
+            --font-main: "Helvetica Neue", Helvetica, "Pretendard", Arial, sans-serif;
+            --bg-color: #f4f4f5; 
+            --accent-color: #000000;
+            --text-muted: #888888;
+            --grain-opacity: 0.04;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--accent-color);
+            overflow: hidden; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- 1. 텍스처 --- */
+        .noise-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999;
+            background: url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PScwIDAgMjAwIDIwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48ZmlsdGVyIGlkPSdub2lzZSc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuNjUnIG51bU9jdGF2ZXM9JzMnIHN0aWNoVGlsc2U9J3N0aWNoJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsdGVyPSd1cmwoI25vaXNlKScvPjwvc3ZnPg==');
+            opacity: var(--grain-opacity);
+            filter: invert(1);
+        }
+
+        /* --- 2. HUD --- */
+        .hud {
+            position: fixed; font-weight: 400; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 2px;
+            z-index: 900; pointer-events: none; color: #000; 
+        }
+        .hud-bottom-left { 
+            bottom: 40px; left: 40px; line-height: 1.5;
+            font-variant-numeric: tabular-nums; font-size: 13.5px; letter-spacing: 2.5px;
+        }
+
+        /* --- 3. 헤더 & 트리거 --- */
+        header {
+            position: fixed; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            padding: 40px; box-sizing: border-box; z-index: 1001; pointer-events: none;
+        }
+        .logo a { font-size: 1.5rem; font-weight: 500; text-decoration: none; letter-spacing: 3px; pointer-events: auto; color: #000; }
+
+        .menu-trigger { 
+            position: fixed; right: 40px; top: 40px; z-index: 1005; 
+            cursor: pointer; color: #000; width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.4s ease;
+        }
+        .menu-trigger svg { width: 100%; height: 100%; stroke-width: 1.2px; }
+        .menu-trigger.active { transform: rotate(90deg); }
+
+        /* --- 🌟 4. 캐스케이딩 텍스트 트리 (우측 상단 & 투명 배경) --- */
+        #text-tree-menu {
+            position: fixed; inset: 0;
+            z-index: 1000; pointer-events: none;
+        }
+
+        /* 🌟 반투명 틴트 및 블러 제거 -> 오직 클릭 감지용 투명 레이어 */
+        .tree-backdrop {
+            position: absolute; inset: 0;
+            background: transparent;
+            backdrop-filter: none;
+            opacity: 0; pointer-events: none;
+        }
+        body.menu-open .tree-backdrop { opacity: 1; pointer-events: auto; cursor: default; }
+
+        /* 🌟 우측 상단 메뉴 버튼 바로 밑에 위치하도록 조정 */
+        .tree-container {
+            position: absolute;
+            top: 80px; right: 40px; /* 트리거(top:40px) 바로 아래 */
+            display: flex; flex-direction: column; gap: 25px;
+            align-items: flex-end; /* 우측 정렬 */
+            text-align: right;
+        }
+
+        /* 개별 대분류 브랜치 */
+        .tree-branch {
+            display: flex; flex-direction: column; align-items: flex-end;
+            opacity: 0; transform: translateX(15px);
+            transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+        
+        body.menu-open .tree-branch { opacity: 1; transform: translateX(0); pointer-events: auto; }
+        body.menu-open #branch-archive { transition-delay: 0.1s; } /* 순차적 등장 */
+
+        /* 대분류 텍스트 (크기 축소) */
+        .branch-title {
+            font-size: 1.2rem; /* 2.5rem -> 1.2rem 축소 */
+            font-weight: 500; letter-spacing: 2px;
+            text-transform: uppercase; color: #888;
+            cursor: pointer; display: inline-block;
+            transition: color 0.3s ease, transform 0.3s ease;
+            transform-origin: right center; /* 우측 기준 */
+        }
+        .branch-title:hover { color: #000; }
+        .tree-branch.is-open .branch-title { color: #000; }
+
+        /* 소분류 항목들이 담기는 공간 */
+        .branch-leaves {
+            display: flex; flex-direction: column; gap: 10px;
+            margin-right: 10px; /* 우측에서 살짝 들여쓰기 */
+            align-items: flex-end; /* 우측 정렬 */
+            overflow: hidden; 
+            max-height: 0; opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.3s ease, margin-top 0.3s ease;
+        }
+
+        .tree-branch.is-open .branch-leaves {
+            max-height: 400px; opacity: 1; margin-top: 15px;
+        }
+
+        /* 소분류 텍스트 리스트 (크기 축소) */
+        .branch-leaves a {
+            font-size: 0.8rem; /* 0.95rem -> 0.8rem 축소 */
+            font-weight: 500; letter-spacing: 1px;
+            color: #666; text-decoration: none; text-transform: uppercase;
+            display: inline-block; transform: translateX(10px);
+            opacity: 0; transition: all 0.3s ease;
+        }
+
+        .tree-branch.is-open .branch-leaves a {
+            transform: translateX(0); opacity: 1;
+        }
+        
+        /* 호버 시 텍스트 컬러와 살짝 왼쪽으로 밀리는 디테일 (우측 정렬이므로) */
+        .branch-leaves a:hover { color: #000; transform: translateX(-5px); }
+
+        /* 소분류 등장 시간차 딜레이 부여 */
+        .tree-branch.is-open .branch-leaves a:nth-child(1) { transition-delay: 0.05s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(2) { transition-delay: 0.08s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(3) { transition-delay: 0.11s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(4) { transition-delay: 0.14s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(5) { transition-delay: 0.17s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(6) { transition-delay: 0.2s; }
+
+
+        /* --- 5. 갤러리 스테이지 --- */
+        .scroll-container { width: 100%; height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; }
+        .scroll-container::-webkit-scrollbar { display: none; }
+        .gallery-stage { position: relative; width: 100%; height: 100vh; overflow: hidden; scroll-snap-align: start; background: var(--bg-color); }
+        .card { position: absolute; box-shadow: 0 10px 30px rgba(0,0,0,0.1); cursor: grab; user-select: none; opacity: 0; transition: transform 0.1s ease-out; }
+        .card-inner { width: 100%; height: 100%; animation: float 8s ease-in-out infinite alternate; pointer-events: none; }
+        .card img { width: 100%; height: auto; display: block; object-fit: contain; pointer-events: none; }
+        @keyframes float { 0% { transform: translateY(0px); } 100% { transform: translateY(-10px); } }
+        
+        .scroll-indicator { 
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            font-size: 0.7rem; font-weight: 500;
+            letter-spacing: 3px; color: #000; animation: bounce 2s infinite; pointer-events: none;
+        }
+        @keyframes bounce { 0%, 100% { transform: translate(-50%, 0); opacity: 0.4; } 50% { transform: translate(-50%, 10px); opacity: 1; } }
+
+        /* --- 6. 인트로 섹션 --- */
+        .intro-section { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; position: relative; }
+        .intro-text { font-size: clamp(1.8rem, 4vw, 2.5rem); font-weight: 400; text-align: center; line-height: 1.6; max-width: 800px; }
+        .contact-group { position: absolute; bottom: 40px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .contact-info, .archive-info { font-size: 0.65rem; color: #888; letter-spacing: 3px; }
+
+        @media (max-width: 768px) {
+            header { padding: 30px 20px; }
+            .logo a { font-size: 1.2rem; }
+            .menu-trigger { right: 20px; top: 30px; }
+            
+            .tree-container { top: 70px; right: 20px; } /* 모바일 우측 상단 배치 */
+            .branch-title { font-size: 1.1rem; }
+            .branch-leaves a { font-size: 0.75rem; }
+            
+            .hud-bottom-left { bottom: 30px; left: 20px; font-size: 11px; }
+            .scroll-indicator { bottom: 20px; font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="noise-overlay"></div>
+    <div class="hud hud-bottom-left"><span id="clock">00:00:00</span></div>
+
+    <header>
+        <div class="logo"><a href="#">YEDO</a></div>
+    </header>
+
+    <div class="menu-trigger" onclick="toggleMenu()" id="menuBtn">
+        <svg id="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="5" x2="21" y2="5"></line>
+            <line x1="3" y1="19" x2="21" y2="19"></line>
+        </svg>
+        <svg id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" style="display: none;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+    </div>
+
+    <!-- 🌟 우측 상단 투명 트리 메뉴 -->
+    <nav id="text-tree-menu">
+        <div class="tree-backdrop" onclick="toggleMenu()"></div>
+        
+        <div class="tree-container">
+            <!-- PHOTO Branch -->
+            <div class="tree-branch" id="branch-photo">
+                <div class="branch-title" onclick="toggleCategory('photo')">PHOTO</div>
+                <div class="branch-leaves">
+                    <a href="hongkong.html">HONG KONG</a>
+                    <a href="shanghai.html">SHANGHAI</a>
+                    <a href="hanoi.html">HANOI</a>
+                    <a href="sapa.html">SAPA</a>
+                    <a href="danang.html">DA NANG</a>
+                    <a href="hochiminh.html">HO CHI MINH</a>
+                </div>
+            </div>
+            
+            <!-- ARCHIVE Branch -->
+            <div class="tree-branch" id="branch-archive">
+                <div class="branch-title" onclick="toggleCategory('archive')">ARCHIVE</div>
+                <div class="branch-leaves">
+                    <a href="music.html">MUSIC</a>
+                    <a href="clothing.html">CLOTHING</a>
+                    <a href="dailyarchive.html">DAILY ARCHIVE</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="scroll-container">
+        <main class="gallery-stage" id="galleryStage">
+            <div class="card"><div class="card-inner"><img src="mainimg/photo1.jpg" alt=""></div></div>
+            <div class="card"><div class="card-inner"><img src="mainimg/photo2.jpg" alt=""></div></div>
+            <div class="card"><div class="card-inner"><img src="mainimg/photo3.jpg" alt=""></div></div>
+            <div class="card"><div class="card-inner"><img src="mainimg/photo4.jpg" alt=""></div></div>
+            <div class="card"><div class="card-inner"><img src="mainimg/photo5.jpg" alt=""></div></div>
+            <div class="scroll-indicator">SCROLL ↓</div>
+        </main>
+
+        <section class="intro-section">
+            <div class="intro-text">Displaying Yedo's archives.</div>
+            <div class="contact-group">
+                <div class="contact-info">yunyedo@gmail.com / @yedokr</div>
+                <div class="archive-info">Based in Seoul / Creative Archive</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // 1. Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.getHours().toString().padStart(2, '0') + ":" + 
+                                                      now.getMinutes().toString().padStart(2, '0') + ":" + 
+                                                      now.getSeconds().toString().padStart(2, '0');
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // 🌟 2. 트리 메뉴 토글 제어
+        function toggleMenu() {
+            const btn = document.getElementById('menuBtn');
+            const ham = document.getElementById('icon-hamburger');
+            const close = document.getElementById('icon-close');
+            
+            document.body.classList.toggle('menu-open');
+            btn.classList.toggle('active');
+            
+            if(!document.body.classList.contains('menu-open')) {
+                // 메뉴 닫을 때 하위 카테고리도 모두 리셋
+                document.getElementById('branch-photo').classList.remove('is-open');
+                document.getElementById('branch-archive').classList.remove('is-open');
+                ham.style.display = 'block'; close.style.display = 'none';
+            } else {
+                ham.style.display = 'none'; close.style.display = 'block';
+            }
+        }
+
+        // 🌟 하위 메뉴 아코디언 토글
+        function toggleCategory(cat) {
+            const photoBranch = document.getElementById('branch-photo');
+            const archiveBranch = document.getElementById('branch-archive');
+
+            if (cat === 'photo') {
+                photoBranch.classList.toggle('is-open');
+                archiveBranch.classList.remove('is-open'); // 다른 쪽은 닫기
+            } else {
+                archiveBranch.classList.toggle('is-open');
+                photoBranch.classList.remove('is-open'); // 다른 쪽은 닫기
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.body.classList.contains('menu-open')) toggleMenu();
+            
+            const sc = document.querySelector('.scroll-container');
+            if (!document.body.classList.contains('menu-open')) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); sc.scrollBy({ top: window.innerHeight, behavior: 'smooth' }); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); sc.scrollBy({ top: -window.innerHeight, behavior: 'smooth' }); }
+            }
+        });
+
+        // 4. 갤러리 카드 분산 및 드래그
+        function scatterCards() {
+            const cards = document.querySelectorAll('.card');
+            const pcZones = [
+                { minX: 5, maxX: 20, minY: 10, maxY: 25, minW: 15, maxW: 20 },
+                { minX: 60, maxX: 75, minY: 10, maxY: 25, minW: 16, maxW: 22 },
+                { minX: 30, maxX: 45, minY: 35, maxY: 45, minW: 22, maxW: 28 },
+                { minX: 10, maxX: 25, minY: 55, maxY: 65, minW: 14, maxW: 18 },
+                { minX: 60, maxX: 75, minY: 55, maxY: 65, minW: 15, maxW: 20 }
+            ];
+            cards.forEach((card, i) => {
+                const z = pcZones[i];
+                card.style.width = `${Math.random() * (z.maxW - z.minW) + z.minW}vw`;
+                card.style.left = `${Math.random() * (z.maxX - z.minX) + z.minX}vw`;
+                card.style.top = `${Math.random() * (z.maxY - z.minY) + z.minY}vh`;
+                card.style.transform = `rotate(${(Math.random() - 0.5) * 20}deg)`;
+                card.style.opacity = '1';
+                makeDraggable(card);
+            });
+        }
+
+        function makeDraggable(el) {
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            let hz = 10;
+            const start = (e) => {
+                if(document.body.classList.contains('menu-open')) return;
+                e.preventDefault(); hz++; el.style.zIndex = hz; el.classList.add('is-dragging');
+                p3 = e.clientX || (e.touches ? e.touches.clientX : 0);
+                p4 = e.clientY || (e.touches ? e.touches.clientY : 0);
+                const move = (me) => {
+                    let cx = me.clientX || (me.touches ? me.touches.clientX : 0);
+                    let cy = me.clientY || (me.touches ? me.touches.clientY : 0);
+                    p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy;
+                    el.style.top = (el.offsetTop - p2) + "px"; el.style.left = (el.offsetLeft - p1) + "px";
+                };
+                const end = () => {
+                    document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', end);
+                    document.removeEventListener('touchmove', move); document.removeEventListener('touchend', end);
+                    setTimeout(() => el.classList.remove('is-dragging'), 50);
+                };
+                document.addEventListener('mousemove', move); document.addEventListener('mouseup', end);
+                document.addEventListener('touchmove', move); document.addEventListener('touchend', end);
+            };
+            el.addEventListener('mousedown', start); el.addEventListener('touchstart', start, { passive: false });
+        }
+        scatterCards();
+    </script>
+</body>
+</html>
