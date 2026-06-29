@@ -421,7 +421,7 @@
             if (document.body.classList.contains('menu-open')) return;
             const touchCurrentX = e.touches[0].clientX;
             // 이동한 거리에 스와이프 감도 계수(2.5)를 곱해서 스크롤 타겟을 업데이트합니다. (속도 상향)
-            const deltaX = (touchStartX - touchCurrentX) * 2.5; 
+            const deltaX = (touchStartX - touchCurrentX) * 2.0; 
             
             const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
             targetScroll += deltaX;

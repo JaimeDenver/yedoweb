@@ -65,7 +65,7 @@
         }
         .menu-trigger:hover svg { transform: scale(1.1); }
 
-        /* --- 3. 캐스케이딩 텍스트 트리 메뉴 --- */
+        /* --- 🌟 3. 캐스케이딩 텍스트 트리 메뉴 --- */
         #text-tree-menu {
             position: fixed; inset: 0;
             z-index: 1000; pointer-events: none;
@@ -123,7 +123,6 @@
             position: absolute; top: 0; left: 0; height: 100vh;
             display: flex; align-items: center;
             padding: 0 15vw; gap: 150px; will-change: transform;
-            user-select: none; -webkit-user-select: none;
         }
 
         .chapter-intro {
@@ -135,7 +134,7 @@
         .chapter-intro p { font-size: 1rem; color: #666; line-height: 1.8; word-break: keep-all; margin: 0; }
 
         .photo-item { position: relative; flex-shrink: 0; cursor: pointer; will-change: transform; }
-        .photo-item img { display: block; max-height: 65vh; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; pointer-events: none; }
+        .photo-item img { display: block; max-height: 65vh; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; }
         body:not(.menu-open) .photo-item:hover img { filter: brightness(0.85); }
 
         .size-l img { height: 65vh; }
@@ -212,7 +211,7 @@
     <main class="horizontal-scroll-wrapper" id="scrollContainer">
         <div class="chapter-intro skew-elem">
             <h2>상해 (上海市)</h2>
-            <p>의외의 연속. 친절한 사람들, 깨끗하고 번영한 도시</p>
+            <p>의외의 연속. 친절한 사람들. 과거의 그림자를 빛으로 표현하는 도시</p>
         </div>
 
         <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="shimg/sh1.webp" alt=""><div class="photo-meta">SH_001</div></div>
@@ -286,22 +285,24 @@
             e.preventDefault();
         }, { passive: false });
 
-        // 🌟 상하이 페이지 터치 스와이프 추가
+        // 터치 스크롤을 위한 변수 추가
         let touchStartX = 0;
-        scrollContainer.addEventListener('touchstart', (e) => {
-            if (document.body.classList.contains('menu-open')) return;
-            touchStartX = e.touches[0].clientX;
-        }, { passive: false });
 
-        scrollContainer.addEventListener('touchmove', (e) => {
+        window.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
             if (document.body.classList.contains('menu-open')) return;
-            const touchCurrentX = e.touches[0].clientX;
-            const deltaX = (touchStartX - touchCurrentX) * 2.5; 
+            
+            const touchX = e.touches[0].clientX;
+            const deltaX = (touchStartX - touchX) * 2.0; // 여기서 감도 2.5 적용
+            
             const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
-            targetScroll += deltaX;
-            targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
-            touchStartX = touchCurrentX;
-            e.preventDefault();
+            targetScroll = Math.max(0, Math.min(targetScroll + deltaX, maxScroll));
+            
+            touchStartX = touchX;
+            e.preventDefault(); // 스크롤 잠금 방지
         }, { passive: false });
 
         function render() {
