@@ -21,15 +21,25 @@
             color: var(--accent-color);
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden; 
-            transition: background-color 0.8s ease;
         }
 
-        /* --- 몰입 모드 (Focus Mode) --- */
-        body.playing-mode { background-color: #111; }
-        body.playing-mode .hud, body.playing-mode .logo a, body.playing-mode .menu-trigger { color: #fff; transition: color 0.8s ease; }
-        body.playing-mode .page-intro h2, body.playing-mode .category-title { color: #444; transition: color 0.8s ease; }
-        body.playing-mode .page-intro p { color: #333; transition: color 0.8s ease; }
-        body.playing-mode .category-header { border-bottom-color: #333; }
+        /* --- 🌟 몰입 모드 (Focus Mode) 수정됨 --- */
+        body.playing-mode { 
+            overflow: hidden; /* 앨범 재생 시 배경 스크롤 100% 잠금 */
+        }
+
+        /* 어두워지는 대신 밝은 반투명 배경 생성 */
+        .play-backdrop {
+            position: fixed; inset: 0; 
+            background: rgba(244, 244, 245, 0.85); /* 기존 배경색과 비슷한 톤의 반투명 */
+            backdrop-filter: blur(8px);
+            z-index: 80; opacity: 0; pointer-events: none;
+            transition: opacity 0.6s ease;
+        }
+        
+        body.playing-mode .play-backdrop {
+            opacity: 1; pointer-events: auto;
+        }
 
         /* --- 1. HUD & Overlay --- */
         .noise-overlay {
@@ -78,7 +88,7 @@
         }
         .menu-trigger.active { transform: rotate(90deg); }
 
-        /* --- 🌟 3. 캐스케이딩 텍스트 트리 메뉴 --- */
+        /* --- 3. 캐스케이딩 텍스트 트리 메뉴 --- */
         #text-tree-menu {
             position: fixed; inset: 0;
             z-index: 1000; pointer-events: none;
@@ -195,7 +205,7 @@
             width: 360px;
             max-width: 44vw;
             transform: translate(var(--rand-x, 0), var(--rand-y, 0)) rotate(var(--rand-rot, 0deg));
-            transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease, opacity 0.8s ease, filter 0.8s ease;
+            transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.5s ease, opacity 0.6s ease, filter 0.6s ease;
             box-shadow: 2px 5px 15px rgba(0,0,0,0.08);
             z-index: 1;
             user-select: none;
@@ -243,19 +253,22 @@
 
         iframe { width: 100% !important; height: 100% !important; border: none; position: relative; z-index: 5; pointer-events: auto; }
 
+        /* --- 🌟 재생 모드 시 나머지 앨범 흐리게 처리 --- */
         body.playing-mode .player-wrapper {
-            opacity: 0.3;
+            opacity: 0.2;
             filter: blur(4px) grayscale(80%);
             pointer-events: none; 
         }
 
+        /* --- 🌟 재생 중인 앨범 중앙으로 날아오는 효과 --- */
         body.playing-mode .player-wrapper.is-playing {
             opacity: 1;
             filter: blur(0) grayscale(0%);
             pointer-events: auto; 
-            z-index: 90 !important; 
-            transform: translate(var(--rand-x, 0), var(--rand-y, 0)) rotate(0deg) scale(1.1); 
-            box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+            z-index: 9999 !important; 
+            /* JS에서 계산한 화면 정중앙 좌표(--play-x, --play-y) 사용 */
+            transform: translate(var(--play-x), var(--play-y)) rotate(0deg) scale(1.3); 
+            box-shadow: 0 40px 100px rgba(0,0,0,0.3);
         }
 
         @media (max-width: 768px) {
@@ -270,12 +283,20 @@
             
             .page-wrapper { padding: 120px 20px 80px 20px; }
             .music-grid { gap: 40px 20px; } 
+
+            body.playing-mode .player-wrapper.is-playing {
+                scale: 1.1; /* 모바일에서는 덜 커지게 */
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="noise-overlay"></div>
+    
+    <!-- 🌟 화면을 반투명하게 덮는 백드롭 추가 -->
+    <div class="play-backdrop" onclick="closePlayer()"></div>
+
     <div class="hud hud-bottom-left">MUSIC ARCHIVE</div>
 
     <header>
@@ -294,7 +315,7 @@
         </svg>
     </div>
 
-    <!-- 🌟 최신 캐스케이딩 텍스트 트리 메뉴 -->
+    <!-- 최신 캐스케이딩 텍스트 트리 메뉴 -->
     <nav id="text-tree-menu">
         <div class="tree-backdrop" onclick="toggleMenu()"></div>
         
@@ -318,7 +339,7 @@
                 <div class="branch-leaves">
                     <a href="music.html">MUSIC</a>
                     <a href="clothing.html">CLOTHING</a>
-                    <li><a href="dailyarchive.html">DAILY ARCHIVE</a></li>
+                    <a href="dailyarchive.html">DAILY ARCHIVE</a>
                 </div>
             </div>
         </div>
@@ -330,7 +351,6 @@
             <p>FEEL IT</p>
         </div>
 
-        <!-- 🌟 모든 음악 데이터 100% 복원 -->
         <!-- 1. Best Korean Hip Hop -->
         <section class="category-section">
             <div class="category-header">
@@ -529,11 +549,12 @@
                 </div>
             </div>
         </section>
+    </div>
 
     <script>
         // --- 메뉴 토글 로직 ---
         function toggleMenu() {
-            const menu = document.getElementById('fullMenu');
+            const menu = document.getElementById('text-tree-menu');
             const iconHamburger = document.getElementById('icon-hamburger');
             const iconClose = document.getElementById('icon-close-menu');
             
@@ -545,13 +566,11 @@
             } else {
                 iconHamburger.style.display = 'block';
                 iconClose.style.display = 'none';
-                // 메뉴 닫을 때 열려있던 하위 카테고리도 리셋
                 document.getElementById('branch-photo').classList.remove('is-open');
                 document.getElementById('branch-archive').classList.remove('is-open');
             }
         }
 
-        // --- 하위 메뉴 아코디언 토글 ---
         function toggleCategory(cat) {
             const photoBranch = document.getElementById('branch-photo');
             const archiveBranch = document.getElementById('branch-archive');
@@ -565,77 +584,7 @@
             }
         }
 
-        // --- Web Audio API 사운드 효과 ---
-        let audioCtx;
-
-        function initAudio() {
-            if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-            if (audioCtx.state === 'suspended') { audioCtx.resume(); }
-        }
-
-        function playHoverSound() {
-            if (!audioCtx || audioCtx.state !== 'running') return;
-            const duration = 0.3; 
-            const bufferSize = audioCtx.sampleRate * duration; 
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) { data[i] = (Math.random() * 2 - 1); }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const filter = audioCtx.createBiquadFilter();
-            filter.type = 'lowpass'; 
-            filter.frequency.setValueAtTime(600, audioCtx.currentTime); 
-            filter.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + duration);
-            const gain = audioCtx.createGain();
-            gain.gain.setValueAtTime(0, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 0.05); 
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration); 
-            noise.connect(filter).connect(gain).connect(audioCtx.destination);
-            noise.start();
-        }
-
-        function playVinylScratch() {
-            initAudio();
-            const t = audioCtx.currentTime;
-            const osc = audioCtx.createOscillator();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(600, t);
-            osc.frequency.exponentialRampToValueAtTime(100, t + 0.08); 
-            osc.frequency.setValueAtTime(100, t + 0.08);
-            osc.frequency.exponentialRampToValueAtTime(800, t + 0.15); 
-            const oscGain = audioCtx.createGain();
-            oscGain.gain.setValueAtTime(0, t);
-            oscGain.gain.linearRampToValueAtTime(0.15, t + 0.02);
-            oscGain.gain.linearRampToValueAtTime(0.02, t + 0.08); 
-            oscGain.gain.linearRampToValueAtTime(0.2, t + 0.11);
-            oscGain.gain.linearRampToValueAtTime(0, t + 0.16);
-            const oscFilter = audioCtx.createBiquadFilter();
-            oscFilter.type = 'lowpass';
-            oscFilter.frequency.value = 2000;
-            osc.connect(oscFilter).connect(oscGain).connect(audioCtx.destination);
-            const bufferSize = audioCtx.sampleRate * 0.16;
-            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < bufferSize; i++) { data[i] = (Math.random() * 2 - 1); }
-            const noise = audioCtx.createBufferSource();
-            noise.buffer = buffer;
-            const noiseFilter = audioCtx.createBiquadFilter();
-            noiseFilter.type = 'bandpass';
-            noiseFilter.frequency.value = 1500;
-            noiseFilter.Q.value = 1.5;
-            const noiseGain = audioCtx.createGain();
-            noiseGain.gain.setValueAtTime(0, t);
-            noiseGain.gain.linearRampToValueAtTime(0.4, t + 0.03);
-            noiseGain.gain.linearRampToValueAtTime(0.1, t + 0.08);
-            noiseGain.gain.linearRampToValueAtTime(0.5, t + 0.12);
-            noiseGain.gain.linearRampToValueAtTime(0, t + 0.16);
-            noise.connect(noiseFilter).connect(noiseGain).connect(audioCtx.destination);
-            osc.start(t); noise.start(t); osc.stop(t + 0.2);
-        }
-
-        document.body.addEventListener('click', initAudio, { once: true });
-
-        // --- 앨범 배치 및 드래그, 사운드 로직 ---
+        // --- 앨범 랜덤 배치 및 드래그 로직 ---
         let highestZIndex = 10;
         
         function arrangeRecords() {
@@ -648,10 +597,6 @@
                 el.style.setProperty('--rand-rot', `${randomRot}deg`);
                 el.style.setProperty('--rand-x', `${randomX}px`);
                 el.style.setProperty('--rand-y', `${randomY}px`);
-                
-                el.addEventListener('mouseenter', () => {
-                    if (!document.body.classList.contains('playing-mode')) playHoverSound();
-                });
                 
                 makeDraggable(el);
             });
@@ -669,8 +614,9 @@
             element.ontouchstart = dragMouseDown;
 
             function dragMouseDown(e) {
-                if (document.body.classList.contains('playing-mode') && !element.classList.contains('is-playing')) return;
-                if (document.body.classList.contains('menu-open')) return; // 메뉴 열렸을 때 드래그 금지
+                // 플레이 모드일 땐 드래그 방지
+                if (document.body.classList.contains('playing-mode')) return;
+                if (document.body.classList.contains('menu-open')) return; 
 
                 highestZIndex++;
                 element.style.zIndex = highestZIndex;
@@ -730,31 +676,37 @@
                 setTimeout(() => { element.classList.remove('is-dragging'); }, 50);
 
                 if (!isDragging && !document.body.classList.contains('menu-open')) {
-                    playVinylScratch(); 
                     loadPlayer(element);
                 }
             }
         }
 
-        // --- 음악 재생 로직 (몰입 모드) ---
+        // --- 음악 재생 로직 (화면 중앙 이동 및 스크롤 고정) ---
         function loadPlayer(wrapper) {
             if (wrapper.classList.contains('is-playing')) return;
 
             const url = wrapper.getAttribute('data-url');
-            
-            const currentlyPlaying = document.querySelector('.is-playing');
-            if (currentlyPlaying) {
-                const oldIframe = currentlyPlaying.querySelector('iframe');
-                if(oldIframe) oldIframe.remove();
-                
-                const oldCover = currentlyPlaying.querySelector('.album-cover');
-                const oldPlayText = currentlyPlaying.querySelector('.play-indicator');
-                if(oldCover) oldCover.style.opacity = '1';
-                if(oldPlayText) oldPlayText.style.opacity = '1';
-                
-                currentlyPlaying.classList.remove('is-playing');
-            }
+            closePlayer(); // 기존 열려있던 플레이어 닫기
 
+            // 🌟 앨범 커버를 화면 중앙으로 이동시키기 위한 좌표 계산 로직
+            const rect = wrapper.getBoundingClientRect();
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+
+            const elementCenterX = rect.left + (rect.width / 2);
+            const elementCenterY = rect.top + (rect.height / 2);
+
+            const dx = centerX - elementCenterX;
+            const dy = centerY - elementCenterY;
+
+            const currentX = parseFloat(wrapper.style.getPropertyValue('--rand-x')) || 0;
+            const currentY = parseFloat(wrapper.style.getPropertyValue('--rand-y')) || 0;
+
+            // 이동할 목표 위치를 CSS 변수에 저장
+            wrapper.style.setProperty('--play-x', `${currentX + dx}px`);
+            wrapper.style.setProperty('--play-y', `${currentY + dy}px`);
+
+            // 상태 변경
             document.body.classList.add('playing-mode');
             wrapper.classList.add('is-playing');
             highestZIndex++;
@@ -779,49 +731,35 @@
             }, 100);
         }
         
+        // --- 플레이어 닫기 (재사용 함수) ---
+        function closePlayer() {
+            document.body.classList.remove('playing-mode');
+            const currentlyPlaying = document.querySelector('.is-playing');
+            if (currentlyPlaying) {
+                const iframe = currentlyPlaying.querySelector('iframe');
+                if (iframe) iframe.remove();
+                
+                const cover = currentlyPlaying.querySelector('.album-cover');
+                const playText = currentlyPlaying.querySelector('.play-indicator');
+                if (cover) cover.style.opacity = '1';
+                if (playText) playText.style.opacity = '1';
+                
+                currentlyPlaying.classList.remove('is-playing');
+            }
+        }
+
         // 여백 클릭 시 몰입 모드 해제
         document.querySelector('.page-wrapper').addEventListener('click', function(e) {
             if (e.target.classList.contains('music-grid') || e.target.classList.contains('page-wrapper')) {
-                document.body.classList.remove('playing-mode');
-                const currentlyPlaying = document.querySelector('.is-playing');
-                if (currentlyPlaying) {
-                    const iframe = currentlyPlaying.querySelector('iframe');
-                    if(iframe) iframe.remove();
-                    
-                    const cover = currentlyPlaying.querySelector('.album-cover');
-                    const playText = currentlyPlaying.querySelector('.play-indicator');
-                    if(cover) cover.style.opacity = '1';
-                    if(playText) playText.style.opacity = '1';
-                    
-                    currentlyPlaying.classList.remove('is-playing');
-                }
+                closePlayer();
             }
         });
 
-        // 🌟 ESC 키보드 단축키 전역 바인딩 (메뉴 닫기 & 플레이어 닫기)
+        // 🌟 ESC 키보드 단축키 전역 바인딩
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                // 1. 메뉴가 열려있다면 닫기
-                if (document.body.classList.contains('menu-open')) {
-                    toggleMenu();
-                }
-
-                // 2. 음악이 재생 중(몰입 모드)이라면 닫기
-                if (document.body.classList.contains('playing-mode')) {
-                    document.body.classList.remove('playing-mode');
-                    const currentlyPlaying = document.querySelector('.is-playing');
-                    if (currentlyPlaying) {
-                        const iframe = currentlyPlaying.querySelector('iframe');
-                        if (iframe) iframe.remove();
-
-                        const cover = currentlyPlaying.querySelector('.album-cover');
-                        const playText = currentlyPlaying.querySelector('.play-indicator');
-                        if (cover) cover.style.opacity = '1';
-                        if (playText) playText.style.opacity = '1';
-
-                        currentlyPlaying.classList.remove('is-playing');
-                    }
-                }
+                if (document.body.classList.contains('menu-open')) toggleMenu();
+                if (document.body.classList.contains('playing-mode')) closePlayer();
             }
         });
     </script>
