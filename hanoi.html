@@ -33,45 +33,28 @@
         }
 
         .hud {
-            position: fixed; 
-            font-weight: 400;
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            z-index: 900; 
-            pointer-events: none;
-            color: #000; 
-            font-size: 12px; 
+            position: fixed; font-weight: 400; text-transform: uppercase; 
+            letter-spacing: 2px; z-index: 900; pointer-events: none;
+            color: #000; font-size: 12px; 
         }
-        
         .hud-bottom-left { bottom: 40px; left: 40px; line-height: 1.5; }
 
         .hud-end-metadata {
-            position: fixed;
-            bottom: 40px;
-            right: 40px;
-            text-align: right;
-            font-size: 10px;
-            letter-spacing: 1px;
-            color: #888;
-            text-transform: uppercase;
-            z-index: 900;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1s cubic-bezier(0.215, 0.61, 0.355, 1);
+            position: fixed; bottom: 40px; right: 40px; text-align: right;
+            font-size: 10px; letter-spacing: 1px; color: #888;
+            text-transform: uppercase; z-index: 900; pointer-events: none;
+            opacity: 0; transition: opacity 1s cubic-bezier(0.215, 0.61, 0.355, 1);
         }
 
         /* --- 2. Header & 트리거 --- */
         header {
             position: fixed; top: 0; left: 0; width: 100%;
             display: flex; justify-content: center; align-items: center;
-            padding: 40px; box-sizing: border-box; z-index: 1001;
-            pointer-events: none;
+            padding: 40px; box-sizing: border-box; z-index: 1001; pointer-events: none;
         }
         .logo a { 
             font-size: 1.5rem; font-weight: 500; text-decoration: none; 
-            letter-spacing: 3px; 
-            pointer-events: auto;
-            color: #000; 
+            letter-spacing: 3px; pointer-events: auto; color: #000; 
         }
 
         /* 🌟 메뉴 트리거 아이콘 규격화 */
@@ -82,24 +65,14 @@
             display: flex; align-items: center; justify-content: center;
         }
         .menu-trigger svg {
-            width: 100%; height: 100%;
-            stroke-width: 1.2px;
+            width: 100%; height: 100%; stroke-width: 1.2px;
             transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
-        .menu-trigger:hover svg {
-            transform: scale(1.1);
-        }
+        .menu-trigger:hover svg { transform: scale(1.1); }
 
-        /* --- 🌟 3. 캐스케이딩 텍스트 트리 메뉴 --- */
-        #text-tree-menu {
-            position: fixed; inset: 0;
-            z-index: 1000; pointer-events: none;
-        }
-        .tree-backdrop {
-            position: absolute; inset: 0;
-            background: transparent;
-            opacity: 0; pointer-events: none;
-        }
+        /* --- 3. 캐스케이딩 텍스트 트리 메뉴 --- */
+        #text-tree-menu { position: fixed; inset: 0; z-index: 1000; pointer-events: none; }
+        .tree-backdrop { position: absolute; inset: 0; background: transparent; opacity: 0; pointer-events: none; }
         body.menu-open .tree-backdrop { opacity: 1; pointer-events: auto; cursor: default; }
 
         .tree-container {
@@ -147,21 +120,21 @@
         .horizontal-scroll-wrapper {
             position: absolute; top: 0; left: 0; height: 100vh;
             display: flex; align-items: center;
-            padding: 0 15vw; 
-            gap: 150px; 
-            will-change: transform;
+            padding: 0 15vw; gap: 150px; will-change: transform;
+            /* 🌟 모바일 드래그 방지 */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .chapter-intro {
             flex-shrink: 0; width: 40vw; padding-right: 10vw;
             display: flex; flex-direction: column; justify-content: center;
-            will-change: transform; 
         }
         .chapter-intro h2 { font-size: clamp(2rem, 5vw, 4rem); font-weight: 500; line-height: 1.1; letter-spacing: -2px; margin: 0 0 30px 0; text-transform: uppercase; }
         .chapter-intro p { font-size: 1rem; color: #666; line-height: 1.8; word-break: keep-all; margin: 0; }
 
-        .photo-item { position: relative; flex-shrink: 0; cursor: pointer; will-change: transform; }
-        .photo-item img { display: block; max-height: 65vh; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; }
+        .photo-item { position: relative; flex-shrink: 0; cursor: pointer; }
+        .photo-item img { display: block; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; pointer-events: none; }
         body:not(.menu-open) .photo-item:hover img { filter: brightness(0.85); }
 
         .size-l img { height: 65vh; }
@@ -173,8 +146,7 @@
         /* --- 5. Lightbox --- */
         #lightbox {
             position: fixed; inset: 0; background: rgba(244, 244, 245, 0.98);
-            z-index: 10000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; backdrop-filter: blur(10px);
+            z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; backdrop-filter: blur(10px);
         }
         #lightbox.active { opacity: 1; pointer-events: auto; }
         #lightbox img { max-width: 90vw; max-height: 85vh; box-shadow: 0 30px 60px rgba(0,0,0,0.15); }
@@ -190,7 +162,11 @@
             .hud-bottom-left { bottom: 30px; left: 20px; font-size: 10px; }
             .horizontal-scroll-wrapper { gap: 80px; padding: 0 10vw; }
             .chapter-intro { width: 80vw; padding-right: 0; }
+            
+            /* 🌟 모바일에서는 높이 고정을 풀고 너비 비율로 통일하여 비율 깨짐 원천 차단 */
             .photo-item img { max-width: 80vw; }
+            .size-l img, .size-m img, .size-s img { height: auto; width: 80vw; } 
+            
             .lightbox-close { top: 30px; right: 20px; }
         }
     </style>
@@ -202,12 +178,19 @@
     <div class="hud-end-metadata" id="endMeta">LOC: 21.0285° N, 105.8542° E / RECORDED IN 2024</div>
 
     <header>
-        <div class="logo"><a href="index.html">YEDO</a></div>
+        <div class="logo"><a href="yedoweb.html">YEDO</a></div>
     </header>
 
     <div class="menu-trigger" onclick="toggleMenu()" id="menuBtn">
-        <svg id="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="5" x2="21" y2="5"></line><line x1="3" y1="19" x2="21" y2="19"></line></svg>
-        <svg id="icon-close-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" style="display: none;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <svg id="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="5" x2="21" y2="5"></line>
+            <line x1="3" y1="19" x2="21" y2="19"></line>
+        </svg>
+        <svg id="icon-close-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" style="display: none;">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
     </div>
 
     <nav id="text-tree-menu">
@@ -222,6 +205,8 @@
                     <a href="sapa.html">SAPA</a>
                     <a href="danang.html">DA NANG</a>
                     <a href="hochiminh.html">HO CHI MINH</a>
+                    <!-- 🌟 도쿄 추가 -->
+                    <a href="tokyo.html">TOKYO</a>
                 </div>
             </div>
             <div class="tree-branch" id="branch-archive">
