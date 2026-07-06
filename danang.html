@@ -306,6 +306,26 @@
             e.preventDefault();
         }, { passive: false });
 
+        // 터치 스크롤을 위한 변수 추가
+        let touchStartX = 0;
+
+        window.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (document.body.classList.contains('menu-open')) return;
+            
+            const touchX = e.touches[0].clientX;
+            const deltaX = (touchStartX - touchX) * 2.0; // 여기서 감도 2.5 적용
+            
+            const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
+            targetScroll = Math.max(0, Math.min(targetScroll + deltaX, maxScroll));
+            
+            touchStartX = touchX;
+            e.preventDefault(); // 스크롤 잠금 방지
+        }, { passive: false });
+
         function render() {
             currentScroll += (targetScroll - currentScroll) * 0.08;
             scrollContainer.style.transform = `translate3d(-${currentScroll}px, 0, 0)`;
