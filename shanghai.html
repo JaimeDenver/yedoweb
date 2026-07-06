@@ -118,11 +118,23 @@
         .tree-branch.is-open .branch-leaves a { transform: translateX(0); opacity: 1; }
         .branch-leaves a:hover { color: #000; transform: translateX(-5px); }
 
+        /* 순차적 등장 딜레이 (TOKYO 추가로 7번째 항목까지 대응) */
+        .tree-branch.is-open .branch-leaves a:nth-child(1) { transition-delay: 0.05s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(2) { transition-delay: 0.08s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(3) { transition-delay: 0.11s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(4) { transition-delay: 0.14s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(5) { transition-delay: 0.17s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(6) { transition-delay: 0.20s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(7) { transition-delay: 0.23s; }
+
         /* --- 4. Gallery Layout --- */
         .horizontal-scroll-wrapper {
             position: absolute; top: 0; left: 0; height: 100vh;
             display: flex; align-items: center;
             padding: 0 15vw; gap: 150px; will-change: transform;
+            /* 모바일 드래그 방지 */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .chapter-intro {
@@ -134,11 +146,13 @@
         .chapter-intro p { font-size: 1rem; color: #666; line-height: 1.8; word-break: keep-all; margin: 0; }
 
         .photo-item { position: relative; flex-shrink: 0; cursor: pointer; will-change: transform; }
-        .photo-item img { display: block; max-height: 65vh; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; }
+        .photo-item img { display: block; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; pointer-events: none;}
         body:not(.menu-open) .photo-item:hover img { filter: brightness(0.85); }
 
         .size-l img { height: 65vh; }
+        .size-m-plus img { height: 55vh; }  
         .size-m img { height: 50vh; }
+        .size-m-minus img { height: 45vh; } 
         .size-s img { height: 35vh; }
 
         .photo-meta { position: absolute; bottom: -40px; left: 0; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px; font-weight: 400; text-transform: uppercase; }
@@ -163,7 +177,11 @@
             .hud-bottom-left { bottom: 30px; left: 20px; font-size: 10px; }
             .horizontal-scroll-wrapper { gap: 80px; padding: 0 10vw; }
             .chapter-intro { width: 80vw; padding-right: 0; }
+            
+            /* 🌟 상하이 모바일 비율 조정 (홍콩과 동일) */
             .photo-item img { max-width: 80vw; }
+            .size-l img, .size-m-plus img, .size-m img, .size-m-minus img, .size-s img { height: auto; width: 80vw; } 
+
             .lightbox-close { top: 30px; right: 20px; }
         }
     </style>
@@ -195,6 +213,8 @@
                     <a href="sapa.html">SAPA</a>
                     <a href="danang.html">DA NANG</a>
                     <a href="hochiminh.html">HO CHI MINH</a>
+                    <!-- 🌟 도쿄 추가 -->
+                    <a href="tokyo.html">TOKYO</a>
                 </div>
             </div>
             <div class="tree-branch" id="branch-archive">
@@ -278,6 +298,8 @@
         const skewElements = document.querySelectorAll('.skew-elem'); 
         const endMeta = document.getElementById('endMeta');
         let currentScroll = 0, targetScroll = 0;
+        
+        // 🌟 PC 휠
         window.addEventListener('wheel', (e) => {
             if (document.body.classList.contains('menu-open')) return;
             const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
@@ -285,24 +307,25 @@
             e.preventDefault();
         }, { passive: false });
 
-        // 터치 스크롤을 위한 변수 추가
+        // 🌟 모바일 터치
         let touchStartX = 0;
 
         window.addEventListener('touchstart', (e) => {
+            if (document.body.classList.contains('menu-open')) return;
             touchStartX = e.touches[0].clientX;
-        }, { passive: true });
+        }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
             if (document.body.classList.contains('menu-open')) return;
             
             const touchX = e.touches[0].clientX;
-            const deltaX = (touchStartX - touchX) * 2.0; // 여기서 감도 2.5 적용
+            const deltaX = (touchStartX - touchX) * 2.0; 
             
             const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
             targetScroll = Math.max(0, Math.min(targetScroll + deltaX, maxScroll));
             
             touchStartX = touchX;
-            e.preventDefault(); // 스크롤 잠금 방지
+            e.preventDefault(); 
         }, { passive: false });
 
         function render() {
