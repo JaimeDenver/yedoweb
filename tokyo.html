@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>YEDO | HO CHI MINH</title>
+    <title>YEDO | TOKYO</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <style>
         :root {
@@ -111,12 +111,20 @@
         .tree-branch.is-open .branch-leaves a { transform: translateX(0); opacity: 1; }
         .branch-leaves a:hover { color: #000; transform: translateX(-5px); }
 
+        /* 7번째 메뉴 항목(TOKYO) 딜레이 추가 */
+        .tree-branch.is-open .branch-leaves a:nth-child(1) { transition-delay: 0.05s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(2) { transition-delay: 0.08s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(3) { transition-delay: 0.11s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(4) { transition-delay: 0.14s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(5) { transition-delay: 0.17s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(6) { transition-delay: 0.2s; }
+        .tree-branch.is-open .branch-leaves a:nth-child(7) { transition-delay: 0.23s; }
+
         /* --- 4. Gallery Layout --- */
         .horizontal-scroll-wrapper {
             position: absolute; top: 0; left: 0; height: 100vh;
             display: flex; align-items: center;
             padding: 0 15vw; gap: 150px; will-change: transform;
-            /* 🌟 모바일 드래그 방지 */
             user-select: none;
             -webkit-user-select: none;
         }
@@ -124,17 +132,19 @@
         .chapter-intro {
             flex-shrink: 0; width: 40vw; padding-right: 10vw;
             display: flex; flex-direction: column; justify-content: center;
-            will-change: transform;
+            will-change: transform; 
         }
         .chapter-intro h2 { font-size: clamp(2rem, 5vw, 4rem); font-weight: 500; line-height: 1.1; letter-spacing: -2px; margin: 0 0 30px 0; text-transform: uppercase; }
         .chapter-intro p { font-size: 1rem; color: #666; line-height: 1.8; word-break: keep-all; margin: 0; }
 
         .photo-item { position: relative; flex-shrink: 0; cursor: pointer; will-change: transform; }
-        .photo-item img { display: block; max-height: 65vh; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; pointer-events: none; }
+        .photo-item img { display: block; max-height: 65vh; width: auto; max-width: 70vw; box-shadow: 0 20px 40px rgba(0,0,0,0.08); transition: filter 0.4s ease; pointer-events: none;}
         body:not(.menu-open) .photo-item:hover img { filter: brightness(0.85); }
 
         .size-l img { height: 65vh; }
+        .size-m-plus img { height: 55vh; }
         .size-m img { height: 50vh; }
+        .size-m-minus img { height: 45vh; }
         .size-s img { height: 35vh; }
 
         .photo-meta { position: absolute; bottom: -40px; left: 0; font-size: 0.75rem; color: var(--text-muted); letter-spacing: 1px; font-weight: 400; text-transform: uppercase; }
@@ -142,7 +152,8 @@
         /* --- 5. Lightbox --- */
         #lightbox {
             position: fixed; inset: 0; background: rgba(244, 244, 245, 0.98);
-            z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; backdrop-filter: blur(10px);
+            z-index: 10000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; backdrop-filter: blur(10px);
         }
         #lightbox.active { opacity: 1; pointer-events: auto; }
         #lightbox img { max-width: 90vw; max-height: 85vh; box-shadow: 0 30px 60px rgba(0,0,0,0.15); }
@@ -159,9 +170,9 @@
             .horizontal-scroll-wrapper { gap: 80px; padding: 0 10vw; }
             .chapter-intro { width: 80vw; padding-right: 0; }
             
-            /* 🌟 모바일에서는 높이 고정을 풀고 너비 비율로 통일하여 렌더링 오류 원천 차단 */
+            /* 모바일 비율 깨짐 방지 */
             .photo-item img { max-width: 80vw; }
-            .size-l img, .size-m img, .size-s img { height: auto; width: 80vw; } 
+            .size-l img, .size-m-plus img, .size-m img, .size-m-minus img, .size-s img { height: auto; width: 80vw; } 
             
             .lightbox-close { top: 30px; right: 20px; }
             .hud-end-metadata { right: 20px; bottom: 30px; font-size: 8px; }
@@ -171,8 +182,8 @@
 <body>
 
     <div class="noise-overlay"></div>
-    <div class="hud hud-bottom-left">HO CHI MINH</div>
-    <div class="hud-end-metadata" id="endMeta">LOC: 10.8231° N, 106.6297° E / RECORDED IN 2024</div>
+    <div class="hud hud-bottom-left">TOKYO</div>
+    <div class="hud-end-metadata" id="endMeta">LOC: 35.6762° N, 139.6503° E / RECORDED IN 2026</div>
 
     <header>
         <div class="logo"><a href="index.html">YEDO</a></div>
@@ -211,40 +222,30 @@
 
     <main class="horizontal-scroll-wrapper" id="scrollContainer">
         <div class="chapter-intro skew-elem">
-            <h2>호치민 (Hồ Chí Minh)</h2>
+            <h2>도쿄 (東京)</h2>
             <p>
-                끊임없는 오토바이의 물결과 뜨거운 열기 속에서 뿜어져 나오는 생동감
+                정교하게 짜여진 질서 속에서 발견하는 아날로그적 낭만과 네온사인의 잔상
             </p>
         </div>
 
-        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm1.webp" alt=""><div class="photo-meta">HCM_001</div></div>
-        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm2.webp" alt=""><div class="photo-meta">HCM_002</div></div>
-        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm3.webp" alt=""><div class="photo-meta">HCM_003</div></div>
-        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm4.webp" alt=""><div class="photo-meta">HCM_004</div></div>
-        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm5.webp" alt=""><div class="photo-meta">HCM_005</div></div>
-        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm6.webp" alt=""><div class="photo-meta">HCM_006</div></div>
-        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm7.webp" alt=""><div class="photo-meta">HCM_007</div></div>
-        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm8.webp" alt=""><div class="photo-meta">HCM_008</div></div>
-        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm9.webp" alt=""><div class="photo-meta">HCM_009</div></div>
-        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm10.webp" alt=""><div class="photo-meta">HCM_010</div></div>
-        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm11.webp" alt=""><div class="photo-meta">HCM_011</div></div>
-        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm12.webp" alt=""><div class="photo-meta">HCM_012</div></div>
-        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm13.webp" alt=""><div class="photo-meta">HCM_013</div></div>
-        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm14.webp" alt=""><div class="photo-meta">HCM_014</div></div>
-        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm15.webp" alt=""><div class="photo-meta">HCM_015</div></div>
-        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm16.webp" alt=""><div class="photo-meta">HCM_016</div></div>
-        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm17.webp" alt=""><div class="photo-meta">HCM_017</div></div>
-        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="hcmimg/hcm18.webp" alt=""><div class="photo-meta">HCM_018</div></div>
-        <div class="photo-item size-m skew-elem" style="padding-right: 15vw;" onclick="openLightbox(this)"><img src="hcmimg/hcm19.webp" alt=""><div class="photo-meta">HCM_019</div></div>
+        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo1.webp" alt=""><div class="photo-meta">TKY_001</div></div>
+        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo2.webp" alt=""><div class="photo-meta">TKY_002</div></div>
+        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo3.webp" alt=""><div class="photo-meta">TKY_003</div></div>
+        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo4.webp" alt=""><div class="photo-meta">TKY_004</div></div>
+        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo5.webp" alt=""><div class="photo-meta">TKY_005</div></div>
+        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo6.webp" alt=""><div class="photo-meta">TKY_006</div></div>
+        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo7.webp" alt=""><div class="photo-meta">TKY_007</div></div>
+        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo8.webp" alt=""><div class="photo-meta">TKY_008</div></div>
+        <div class="photo-item size-m skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo9.webp" alt=""><div class="photo-meta">TKY_009</div></div>
+        <div class="photo-item size-m-plus skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo10.webp" alt=""><div class="photo-meta">TKY_010</div></div>
+        <div class="photo-item size-s skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo11.webp" alt=""><div class="photo-meta">TKY_011</div></div>
+        <div class="photo-item size-m-minus skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo12.webp" alt=""><div class="photo-meta">TKY_012</div></div>
+        <div class="photo-item size-l skew-elem" onclick="openLightbox(this)"><img src="tokyoimg/tokyo13.webp" alt=""><div class="photo-meta">TKY_013</div></div>
+        <div class="photo-item size-m skew-elem" style="padding-right: 15vw;" onclick="openLightbox(this)"><img src="tokyoimg/tokyo14.webp" alt=""><div class="photo-meta">TKY_014</div></div>
     </main>
 
     <div id="lightbox" onclick="closeLightbox()">
-        <div class="lightbox-close">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square" stroke-linejoin="miter">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </div>
+        <div class="lightbox-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="square"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>
         <img id="lightbox-img" src="" alt="">
     </div>
 
@@ -271,83 +272,47 @@
         const scrollContainer = document.getElementById('scrollContainer');
         const skewElements = document.querySelectorAll('.skew-elem'); 
         const endMeta = document.getElementById('endMeta');
+        let currentScroll = 0, targetScroll = 0;
         
-        let currentScroll = 0;
-        let targetScroll = 0;
-        const ease = 0.08; 
-
-        // 🌟 마우스 휠 이벤트
         window.addEventListener('wheel', (e) => {
             if (document.body.classList.contains('menu-open')) return;
-
             const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
-            const isAtLeftEdge = currentScroll <= 1;
-            const isAtRightEdge = currentScroll >= maxScroll - 1;
-            const isSwipingBack = e.deltaX < 0;
-            const isSwipingForward = e.deltaX > 0;
-
-            if (!((isAtLeftEdge && isSwipingBack) || (isAtRightEdge && isSwipingForward))) {
-                e.preventDefault();
-                targetScroll += e.deltaY + e.deltaX; 
-                targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
-            }
-        }, { passive: false });
-
-        // 🌟 모바일 터치 스와이프 이벤트
-        let touchStartX = 0;
-        
-        scrollContainer.addEventListener('touchstart', (e) => {
-            if (document.body.classList.contains('menu-open')) return;
-            touchStartX = e.touches[0].clientX;
-        }, { passive: false });
-
-        scrollContainer.addEventListener('touchmove', (e) => {
-            if (document.body.classList.contains('menu-open')) return;
-            const touchCurrentX = e.touches[0].clientX;
-            const deltaX = (touchStartX - touchCurrentX) * 2.0; 
-            
-            const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
-            targetScroll += deltaX;
-            targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
-            
-            touchStartX = touchCurrentX; 
+            targetScroll = Math.max(0, Math.min(targetScroll + e.deltaY + e.deltaX, maxScroll));
             e.preventDefault();
         }, { passive: false });
 
-        function renderScroll() {
-            const velocity = targetScroll - currentScroll;
-            currentScroll += velocity * ease;
-            scrollContainer.style.transform = `translate3d(-${currentScroll}px, 0, 0)`;
+        // 터치 스크롤 (감도 2.5)
+        let touchStartX = 0;
 
-            const skewValue = Math.max(-2, Math.min(2, velocity * 0.008)); 
-            skewElements.forEach(elem => {
-                elem.style.transform = `skewX(${skewValue}deg)`;
-            });
+        window.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        }, { passive: true });
 
+        window.addEventListener('touchmove', (e) => {
+            if (document.body.classList.contains('menu-open')) return;
+            
+            const touchX = e.touches[0].clientX;
+            const deltaX = (touchStartX - touchX) * 2.5; 
+            
             const maxScroll = scrollContainer.scrollWidth - window.innerWidth;
-            if (currentScroll > maxScroll - 150) {
-                endMeta.style.opacity = "1";
-            } else {
-                endMeta.style.opacity = "0";
-            }
+            targetScroll = Math.max(0, Math.min(targetScroll + deltaX, maxScroll));
+            
+            touchStartX = touchX;
+            e.preventDefault(); 
+        }, { passive: false });
 
-            requestAnimationFrame(renderScroll);
+        function render() {
+            currentScroll += (targetScroll - currentScroll) * 0.08;
+            scrollContainer.style.transform = `translate3d(-${currentScroll}px, 0, 0)`;
+            skewElements.forEach(e => e.style.transform = `skewX(${Math.max(-2, Math.min(2, (targetScroll - currentScroll) * 0.008))}deg)`);
+            endMeta.style.opacity = (currentScroll > scrollContainer.scrollWidth - window.innerWidth - 150) ? "1" : "0";
+            requestAnimationFrame(render);
         }
-        renderScroll();
+        render();
 
-        function openLightbox(element) { 
-            if (!document.body.classList.contains('menu-open')) { 
-                document.getElementById('lightbox-img').src = element.querySelector('img').src; 
-                document.getElementById('lightbox').classList.add('active'); 
-            } 
-        }
+        function openLightbox(el) { if (!document.body.classList.contains('menu-open')) { document.getElementById('lightbox-img').src = el.querySelector('img').src; document.getElementById('lightbox').classList.add('active'); } }
         function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
-        window.addEventListener('keydown', (e) => { 
-            if (e.key === 'Escape') { 
-                closeLightbox(); 
-                if(document.body.classList.contains('menu-open')) toggleMenu(); 
-            } 
-        });
+        window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeLightbox(); if(document.body.classList.contains('menu-open')) toggleMenu(); } });
     </script>
 </body>
 </html>
